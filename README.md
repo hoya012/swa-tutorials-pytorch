@@ -1,13 +1,9 @@
 
-<p align="center">
-  <img width="1200" src="/assets/banner.PNG">
-</p>
-
-# captum-tutorials-pytorch
-Automatic Mixed Precision Tutorials using pytorch. Based on [PyTorch 1.6 Official Features (Automatic Mixed Precision)](https://pytorch.org/docs/stable/notes/amp_examples.html), implement classification codebase using custom dataset.
+# swa-tutorials-pytorch
+Stochastic Weight Averaging Tutorials using pytorch. Based on [PyTorch 1.6 Official Features (Stochastic Weight Averaging)](https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/), implement classification codebase using custom dataset.
 
 - author: hoya012  
-- last update: 2020.08.25
+- last update: 2020.10.20
 
 ## 0. Experimental Setup 
 ### 0-1. Prepare Library
@@ -40,56 +36,66 @@ This Data contains around 25k images of size 150x150 distributed under 6 categor
 - Batch Size 256 / Epochs 120 / Initial Learning Rate 0.0001
 - Training Augmentation: Resize((256, 256)), RandomHorizontalFlip()
 - Adam + Cosine Learning rate scheduling with warmup
-- I tried NVIDIA Pascal GPU - GTX 1080 Ti 1 GPU (w/o Tensor Core) and NVIDIA Turing GPU - RTX 2080 Ti 1 GPU (with Tensor Core)
+- I tried NVIDIA Pascal GPU - GTX 1080 Ti 1 GPU
 
 ```python
 python main.py --checkpoint_name baseline;
 ```
 
-### 2. Automatic Mixed Precision Training 
+### 2. Stochastic Weight Averaging Training 
 
-In PyTorch 1.6, Automatic Mixed Precision Training is very easy to use! Thanks to PyTorch..
+In PyTorch 1.6, Stochastic Weight Averaging is very easy to use! Thanks to PyTorch..
 
 ```python
-""" define loss scaler for automatic mixed precision """
-scaler = torch.cuda.amp.GradScaler()
+from torch.optim.swa_utils import AveragedModel, SWALR
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
-for batch_idx, (inputs, labels) in enumerate(data_loader):
-  self.optimizer.zero_grad()
+loader, optimizer, model, loss_fn = ...
+swa_model = AveragedModel(model)
+scheduler = CosineAnnealingLR(optimizer, T_max=100)
+swa_start = 5
+swa_scheduler = SWALR(optimizer, swa_lr=0.05)
 
-  with torch.cuda.amp.autocast():
-    outputs = self.model(inputs)
-    loss = self.criterion(outputs, labels)
+for epoch in range(100):
+      for input, target in loader:
+          optimizer.zero_grad()
+          loss_fn(model(input), target).backward()
+          optimizer.step()
+      if epoch > swa_start:
+          swa_model.update_parameters(model)
+          swa_scheduler.step()
+      else:
+          scheduler.step()
 
-  # Scales the loss, and calls backward() 
-  # to create scaled gradients 
-  self.scaler.scale(loss).backward()
-
-  # Unscales gradients and calls 
-  # or skips optimizer.step() 
-  self.scaler.step(self.optimizer)
-
-  # Updates the scale for next iteration 
-  self.scaler.update()
+# Update bn statistics for the swa_model at the end
+torch.optim.swa_utils.update_bn(loader, swa_model)
+# Use swa_model to make predictions on test data 
+preds = swa_model(test_input)
 ```
 
 #### Run Script (Command Line)
 ```python
-python main.py --checkpoint_name baseline_amp --amp;
+python main.py --checkpoint_name baseline;
+python main.py --checkpoint_name swa --decay_type swa --swa_start 90 --swa_lr 5e-5;
 ```
 
 ### 3. Performance Table
-- B : Baseline (FP32)
-- AMP : Automatic Mixed Precision Training (AMP)
+- B : Baseline
+- SWA : Stochastic Weight Averaging
+    - SWA_{swa_start}_{swa_lr}
 
-|   Algorithm  | Test Accuracy |   GPU Memory   | Total Training Time |
-|:------------:|:-------------:|:--------------:|:-------------------:|
-|  B - 1080 Ti |      94.13    |     10737MB    |         64.9m       |    
-|  B - 2080 Ti |      94.17    |     10855MB    |         54.3m       |    
-| AMP - 1080 Ti|      94.07    |     6615MB     |         64.7m       |  
-| AMP - 2080 Ti|      94.23    |     7799MB     |         37.3m       |  
+|   Algorithm  | Test Accuracy |  
+|:------------:|:-------------:|  
+|      B       |      94.10    |  
+|  SWA_90_0.05 |      80.53    |  
+|  SWA_90_1e-4 |      94.20    |  
+|  SWA_90_5e-4 |      93.87    |  
+|  SWA_90_1e-5 |      94.23    |  
+|  SWA_90_5e-5 |    **94.57**  |  
+|  SWA_75_5e-5 |     Running   |  
+|  SWA_60_5e-5 |     Running   |  
 
 ### 4. Code Reference
 - Baseline Code: https://github.com/hoya012/carrier-of-tricks-for-classification-pytorch
 - Gradual Warmup Scheduler: https://github.com/ildoonet/pytorch-gradual-warmup-lr
-- PyTorch Automatic Mixed Precision: https://pytorch.org/docs/stable/notes/amp_examples.html
+- PyTorch Stochastic Weight Averaging: https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging
