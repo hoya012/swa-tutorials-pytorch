@@ -1,6 +1,6 @@
 
 # swa-tutorials-pytorch
-Stochastic Weight Averaging Tutorials using pytorch. Based on [PyTorch 1.6 Official Features (Stochastic Weight Averaging)](https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/), implement classification codebase using custom dataset.
+[Stochastic Weight Averaging](https://arxiv.org/abs/1803.05407) Tutorials using pytorch. Based on [PyTorch 1.6 Official Features (Stochastic Weight Averaging)](https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/), implement classification codebase using custom dataset. 
 
 - author: hoya012  
 - last update: 2020.10.20
