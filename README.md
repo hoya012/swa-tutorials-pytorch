@@ -46,6 +46,7 @@ python main.py --checkpoint_name baseline;
 
 In PyTorch 1.6, Stochastic Weight Averaging is very easy to use! Thanks to PyTorch..
 
+- PyTorch's official tutorial's guide
 ```python
 from torch.optim.swa_utils import AveragedModel, SWALR
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -73,9 +74,32 @@ torch.optim.swa_utils.update_bn(loader, swa_model)
 preds = swa_model(test_input)
 ```
 
+- My own implementations
+```python
+# in main.py
+""" define model and learning rate scheduler for stochastic weight averaging """
+swa_model = torch.optim.swa_utils.AveragedModel(model)
+swa_scheduler = SWALR(optimizer, swa_lr=args.swa_lr)
+
+...  
+
+# in learning/trainer.py
+if epoch > args.swa_start and args.decay_type == 'swa':
+  self.swa_model.update_parameters(self.model)
+  self.swa_scheduler.step()
+else:
+  self.scheduler.step()
+
+...
+
+# in main.py
+swa_model = swa_model.cpu()
+torch.optim.swa_utils.update_bn(train_loader, swa_model)
+swa_model = swa_model.cuda() 
+```
+
 #### Run Script (Command Line)
 ```python
-python main.py --checkpoint_name baseline;
 python main.py --checkpoint_name swa --decay_type swa --swa_start 90 --swa_lr 5e-5;
 ```
 
