@@ -116,8 +116,8 @@ python main.py --checkpoint_name swa --decay_type swa --swa_start 90 --swa_lr 5e
 |  SWA_90_5e-4 |      93.87    |  
 |  SWA_90_1e-5 |      94.23    |  
 |  SWA_90_5e-5 |    **94.57**  |  
-|  SWA_75_5e-5 |     Running   |  
-|  SWA_60_5e-5 |     Running   |  
+|  SWA_75_5e-5 |      94.27    |  
+|  SWA_60_5e-5 |      94.33    |  
 
 ### 4. Code Reference
 - Baseline Code: https://github.com/hoya012/carrier-of-tricks-for-classification-pytorch
