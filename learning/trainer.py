@@ -62,11 +62,12 @@ class Trainer:
                 ]
                 print(', '.join(ret))
         
+            if not args.decay_type == 'swa':
+                self.scheduler.step()
+
         if epoch > args.swa_start and args.decay_type == 'swa':
             self.swa_model.update_parameters(self.model)
             self.swa_scheduler.step()
-        else:
-            self.scheduler.step()
 
         result_dict['train_loss'].append(losses.avg)
         result_dict['train_acc'].append(top1.avg)
