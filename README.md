@@ -3,7 +3,7 @@
 [Stochastic Weight Averaging](https://arxiv.org/abs/1803.05407) Tutorials using pytorch. Based on [PyTorch 1.6 Official Features (Stochastic Weight Averaging)](https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/), implement classification codebase using custom dataset. 
 
 - author: hoya012  
-- last update: 2020.10.20
+- last update: 2020.10.23
 
 ## 0. Experimental Setup 
 ### 0-1. Prepare Library
@@ -84,11 +84,16 @@ swa_scheduler = SWALR(optimizer, swa_lr=args.swa_lr)
 ...  
 
 # in learning/trainer.py
+for batch_idx, (inputs, labels) in enumerate(data_loader):
+  if not args.decay_type == 'swa':
+        self.scheduler.step()
+  else:
+      if epoch <= args.swa_start:
+          self.scheduler.step()
+
 if epoch > args.swa_start and args.decay_type == 'swa':
   self.swa_model.update_parameters(self.model)
   self.swa_scheduler.step()
-else:
-  self.scheduler.step()
 
 ...
 
