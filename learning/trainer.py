@@ -64,6 +64,9 @@ class Trainer:
         
             if not args.decay_type == 'swa':
                 self.scheduler.step()
+            else:
+                if epoch <= args.swa_start:
+                    self.scheduler.step()
 
         if epoch > args.swa_start and args.decay_type == 'swa':
             self.swa_model.update_parameters(self.model)
